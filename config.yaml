@@ -1,0 +1,355 @@
+##################################################################
+# Debug Parameters
+##################################################################
+DEBUG_MODE : false
+save_plots_loc : images/
+jupyter : false
+#=====================Working Directories=========================
+use_colab : false
+home_dirs:
+  - /mnt/c/College/GitHub/MachineLearning/face_detect/
+  - /content/gdrive/My Drive/deeplearning/yolov2/
+
+##################################################################
+# Dataset Parameters
+##################################################################
+train_data_loc : datasets/road_sign_detection/train_data/ #testing/
+test_data_loc : datasets/road_sign_detection/testing/ #test_data/
+data_count : 50 # a number or full
+num_classes : 4 # if one class, then use 0
+
+ds_mean :
+  - 0.485 
+  - 0.456
+  - 0.406
+ds_std:
+  - 0.229
+  - 0.224
+  - 0.225
+#=================================================================
+img_size : 416 # n x n , should be a multiple of 32
+train_test_ratio: 0.8 # Unused
+#===================Augmentation Parameters=======================
+
+
+##################################################################
+# Training Parameters
+##################################################################
+warmstart : false # Loads a checkpointed model and resumes training
+
+batch_size : 2
+shuffle_data : true
+
+use_gpu : false
+num_workers : 4 # 4 * number of GPUs
+use_pretrained : true # Uses pre-trained Darknet19 weights
+c_pretrained_weights_loc : weights/darknet19.weights.npz
+d_pretrained_weights_loc : weights/yolov2.weights
+checkpoints_loc : checkpoints/
+
+clip_grad : true
+clip_grad_max_norm : 1
+
+grid_stride : 32
+reorg_stride : 2
+num_grid_cells : 13 # n x n
+
+num_anchors : 5 # YOLOv1 = 2 , YOLOv2 = 5
+anchor_ignore_threshold : 0.5
+
+#===================Training Optimizer============================
+optimizer_type : adam # Paper uses SGD - Adam is more stable
+optimizer_eps : 0.00001
+#===================Multi-scale Training============================
+multiscale : false # if true trains on img 320-608
+multiscale_min : 320
+multiscale_max : 608
+
+training_model : detector # "detector" or "classifier"
+#======================Classification Training=======================
+c_num_epochs : 3
+c_learning_rate : 0.1
+c_weight_decay : 0.0005
+c_momentum : 0.9
+#=======================Detection Training===========================
+d_num_epochs : 5
+d_learning_rate : 0.0001 # Paper: 0.0001
+d_weight_decay : 0.0005
+d_momentum : 0.9
+#=======================Loss Function Parameters======================
+loss_eps : 1e-6
+l_noobj : 0.5
+l_coord : 5
+
+##################################################################
+# Testing Parameters
+##################################################################
+model_loc : trained_models/epoch_4.pt
+
+conf_thresh : 0.5
+nms_thresh : 0.5 # This is a threshold for the IoU
+##################################################################
+# Model Parameters
+##################################################################
+darknet19:
+ conv0.weight : kernel
+ conv0.bias : biases
+ conv0_bn.weight : gamma
+ conv0_bn.bias : biases
+ conv0_bn.running_mean : moving_mean
+ conv0_bn.running_var : moving_variance
+
+ conv1.weight : kernel
+ conv1.bias : biases
+ conv1_bn.weight : gamma
+ conv1_bn.bias : biases
+ conv1_bn.running_mean : moving_mean
+ conv1_bn.running_var : moving_variance
+
+ conv2.weight : kernel
+ conv2.bias : biases
+ conv2_bn.weight : gamma
+ conv2_bn.bias : biases
+ conv2_bn.running_mean : moving_mean
+ conv2_bn.running_var : moving_variance
+
+ conv3.weight : kernel
+ conv3.bias : biases
+ conv3_bn.weight : gamma
+ conv3_bn.bias : biases
+ conv3_bn.running_mean : moving_mean
+ conv3_bn.running_var : moving_variance
+
+ conv4.weight : kernel
+ conv4.bias : biases
+ conv4_bn.weight : gamma
+ conv4_bn.bias : biases
+ conv4_bn.running_mean : moving_mean
+ conv4_bn.running_var : moving_variance
+
+ conv5.weight : kernel
+ conv5.bias : biases
+ conv5_bn.weight : gamma
+ conv5_bn.bias : biases
+ conv5_bn.running_mean : moving_mean
+ conv5_bn.running_var : moving_variance
+
+ conv6.weight : kernel
+ conv6.bias : biases
+ conv6_bn.weight : gamma
+ conv6_bn.bias : biases
+ conv6_bn.running_mean : moving_mean
+ conv6_bn.running_var : moving_variance
+
+ conv7.weight : kernel
+ conv7.bias : biases
+ conv7_bn.weight : gamma
+ conv7_bn.bias : biases
+ conv7_bn.running_mean : moving_mean
+ conv7_bn.running_var : moving_variance
+
+ conv8.weight : kernel
+ conv8.bias : biases
+ conv8_bn.weight : gamma
+ conv8_bn.bias : biases
+ conv8_bn.running_mean : moving_mean
+ conv8_bn.running_var : moving_variance
+
+ conv9.weight : kernel
+ conv9.bias : biases
+ conv9_bn.weight : gamma
+ conv9_bn.bias : biases
+ conv9_bn.running_mean : moving_mean
+ conv9_bn.running_var : moving_variance
+
+ conv10.weight : kernel
+ conv10.bias : biases
+ conv10_bn.weight : gamma
+ conv10_bn.bias : biases
+ conv10_bn.running_mean : moving_mean
+ conv10_bn.running_var : moving_variance
+
+ conv11.weight : kernel
+ conv11.bias : biases
+ conv11_bn.weight : gamma
+ conv11_bn.bias : biases
+ conv11_bn.running_mean : moving_mean
+ conv11_bn.running_var : moving_variance
+
+ conv12.weight : kernel
+ conv12.bias : biases
+ conv12_bn.weight : gamma
+ conv12_bn.bias : biases
+ conv12_bn.running_mean : moving_mean
+ conv12_bn.running_var : moving_variance
+
+ conv13.weight : kernel
+ conv13.bias : biases
+ conv13_bn.weight : gamma
+ conv13_bn.bias : biases
+ conv13_bn.running_mean : moving_mean
+ conv13_bn.running_var : moving_variance
+
+ conv14.weight : kernel
+ conv14.bias : biases
+ conv14_bn.weight : gamma
+ conv14_bn.bias : biases
+ conv14_bn.running_mean : moving_mean
+ conv14_bn.running_var : moving_variance
+
+ conv15.weight : kernel
+ conv15.bias : biases
+ conv15_bn.weight : gamma
+ conv15_bn.bias : biases
+ conv15_bn.running_mean : moving_mean
+ conv15_bn.running_var : moving_variance
+
+ conv16.weight : kernel
+ conv16.bias : biases
+ conv16_bn.weight : gamma
+ conv16_bn.bias : biases
+ conv16_bn.running_mean : moving_mean
+ conv16_bn.running_var : moving_variance
+
+ conv17.weight : kernel
+ conv17.bias : biases
+ conv17_bn.weight : gamma
+ conv17_bn.bias : biases
+ conv17_bn.running_mean : moving_mean
+ conv17_bn.running_var : moving_variance
+
+ conv18.weight : kernel
+ conv18.bias : biases
+
+##########################################
+# YOLOv2
+##########################################
+yolov2:
+ backbone.conv0.weight : kernel
+ backbone.conv0.bias : biases
+ backbone.conv0_bn.weight : gamma
+ backbone.conv0_bn.bias : biases
+ backbone.conv0_bn.running_mean : moving_mean
+ backbone.conv0_bn.running_var : moving_variance
+
+ backbone.conv1.weight : kernel
+ backbone.conv1.bias : biases
+ backbone.conv1_bn.weight : gamma
+ backbone.conv1_bn.bias : biases
+ backbone.conv1_bn.running_mean : moving_mean
+ backbone.conv1_bn.running_var : moving_variance
+
+ backbone.conv2.weight : kernel
+ backbone.conv2.bias : biases
+ backbone.conv2_bn.weight : gamma
+ backbone.conv2_bn.bias : biases
+ backbone.conv2_bn.running_mean : moving_mean
+ backbone.conv2_bn.running_var : moving_variance
+
+ backbone.conv3.weight : kernel
+ backbone.conv3.bias : biases
+ backbone.conv3_bn.weight : gamma
+ backbone.conv3_bn.bias : biases
+ backbone.conv3_bn.running_mean : moving_mean
+ backbone.conv3_bn.running_var : moving_variance
+
+ backbone.conv4.weight : kernel
+ backbone.conv4.bias : biases
+ backbone.conv4_bn.weight : gamma
+ backbone.conv4_bn.bias : biases
+ backbone.conv4_bn.running_mean : moving_mean
+ backbone.conv4_bn.running_var : moving_variance
+
+ backbone.conv5.weight : kernel
+ backbone.conv5.bias : biases
+ backbone.conv5_bn.weight : gamma
+ backbone.conv5_bn.bias : biases
+ backbone.conv5_bn.running_mean : moving_mean
+ backbone.conv5_bn.running_var : moving_variance
+
+ backbone.conv6.weight : kernel
+ backbone.conv6.bias : biases
+ backbone.conv6_bn.weight : gamma
+ backbone.conv6_bn.bias : biases
+ backbone.conv6_bn.running_mean : moving_mean
+ backbone.conv6_bn.running_var : moving_variance
+
+ backbone.conv7.weight : kernel
+ backbone.conv7.bias : biases
+ backbone.conv7_bn.weight : gamma
+ backbone.conv7_bn.bias : biases
+ backbone.conv7_bn.running_mean : moving_mean
+ backbone.conv7_bn.running_var : moving_variance
+
+ backbone.conv8.weight : kernel
+ backbone.conv8.bias : biases
+ backbone.conv8_bn.weight : gamma
+ backbone.conv8_bn.bias : biases
+ backbone.conv8_bn.running_mean : moving_mean
+ backbone.conv8_bn.running_var : moving_variance
+
+ backbone.conv9.weight : kernel
+ backbone.conv9.bias : biases
+ backbone.conv9_bn.weight : gamma
+ backbone.conv9_bn.bias : biases
+ backbone.conv9_bn.running_mean : moving_mean
+ backbone.conv9_bn.running_var : moving_variance
+
+ backbone.conv10.weight : kernel
+ backbone.conv10.bias : biases
+ backbone.conv10_bn.weight : gamma
+ backbone.conv10_bn.bias : biases
+ backbone.conv10_bn.running_mean : moving_mean
+ backbone.conv10_bn.running_var : moving_variance
+
+ backbone.conv11.weight : kernel
+ backbone.conv11.bias : biases
+ backbone.conv11_bn.weight : gamma
+ backbone.conv11_bn.bias : biases
+ backbone.conv11_bn.running_mean : moving_mean
+ backbone.conv11_bn.running_var : moving_variance
+
+ backbone.conv12.weight : kernel
+ backbone.conv12.bias : biases
+ backbone.conv12_bn.weight : gamma
+ backbone.conv12_bn.bias : biases
+ backbone.conv12_bn.running_mean : moving_mean
+ backbone.conv12_bn.running_var : moving_variance
+
+ backbone.conv13.weight : kernel
+ backbone.conv13.bias : biases
+ backbone.conv13_bn.weight : gamma
+ backbone.conv13_bn.bias : biases
+ backbone.conv13_bn.running_mean : moving_mean
+ backbone.conv13_bn.running_var : moving_variance
+
+ backbone.conv14.weight : kernel
+ backbone.conv14.bias : biases
+ backbone.conv14_bn.weight : gamma
+ backbone.conv14_bn.bias : biases
+ backbone.conv14_bn.running_mean : moving_mean
+ backbone.conv14_bn.running_var : moving_variance
+
+ backbone.conv15.weight : kernel
+ backbone.conv15.bias : biases
+ backbone.conv15_bn.weight : gamma
+ backbone.conv15_bn.bias : biases
+ backbone.conv15_bn.running_mean : moving_mean
+ backbone.conv15_bn.running_var : moving_variance
+
+ backbone.conv16.weight : kernel
+ backbone.conv16.bias : biases
+ backbone.conv16_bn.weight : gamma
+ backbone.conv16_bn.bias : biases
+ backbone.conv16_bn.running_mean : moving_mean
+ backbone.conv16_bn.running_var : moving_variance
+
+ backbone.conv17.weight : kernel
+ backbone.conv17.bias : biases
+ backbone.conv17_bn.weight : gamma
+ backbone.conv17_bn.bias : biases
+ backbone.conv17_bn.running_mean : moving_mean
+ backbone.conv17_bn.running_var : moving_variance
+
+ backbone.conv18.weight : kernel
+ backbone.conv18.bias : biases
