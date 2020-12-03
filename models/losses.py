@@ -17,13 +17,17 @@ class YOLO_SSE(nn.Module):
     calculate 3 losses based on the output predictions from YOLO.
     """
     def __init__(self,config,anchor_boxes,device):
-        super(YOLO_SSE2,self).__init__()
+        super(YOLO_SSE,self).__init__()
         self.config = open_config()
         self.anchor_boxes = anchor_boxes
         self.device = device
 
+        # Choosing the reduction type of the loss fn
+        # sum -> SSE
+        # mean -> MSE or 1/n * SSE
+        self.reduction = 'mean'
+        
         self.num_grid_cells = self.config['num_grid_cells']
-
         self.grid_xy = self.create_grid(self.num_grid_cells**2)
         self.grid_xy = self.grid_xy.to(self.device)
 
@@ -122,7 +126,10 @@ class YOLO_SSE(nn.Module):
         x_sq_diff = (torch.abs(gt_x_bbox - pred_x_bbox))**2
         y_sq_diff = (torch.abs(gt_y_bbox - pred_y_bbox))**2
 
-        xy_loss = torch.sum( obj_mask * ( x_sq_diff + y_sq_diff),dtype=torch.float32)
+        if(self.reduction == 'sum'):
+            xy_loss = torch.sum( obj_mask * ( x_sq_diff + y_sq_diff),dtype=torch.float32)
+        elif(self.reduction == 'mean'):
+            xy_loss = torch.sum( obj_mask * ( x_sq_diff + y_sq_diff),dtype=torch.float32)/torch.sum(obj_mask)
 
         #####################################################
         #                   WH Loss                         #
@@ -136,8 +143,11 @@ class YOLO_SSE(nn.Module):
         w_sq_diff = (torch.sqrt(torch.abs(gt_w_bbox)+eps) - torch.sqrt(torch.abs(pred_w_bbox)+eps))**2
         h_sq_diff = (torch.sqrt(torch.abs(gt_h_bbox)+eps) - torch.sqrt(torch.abs(pred_h_bbox)+eps))**2
 
-        wh_loss = torch.sum(obj_mask * (w_sq_diff + h_sq_diff),dtype=torch.float32)
-        
+        if(self.reduction == 'sum'):
+            wh_loss = torch.sum(obj_mask * (w_sq_diff + h_sq_diff),dtype=torch.float32)
+        elif(self.reduction == 'mean'):
+            wh_loss = torch.sum(obj_mask * (w_sq_diff + h_sq_diff),dtype=torch.float32)/torch.sum(obj_mask)
+
         bbox_loss = ((l_coord * xy_loss) + (l_coord * wh_loss))
         return bbox_loss
 
@@ -155,15 +165,23 @@ class YOLO_SSE(nn.Module):
         obj_mask = torch.zeros_like(conf_predictions).to(self.device)
         # contains 1 for any box that had a obj
         obj_mask = torch.where(gt_conf == 1.0,torch.ones_like(conf_predictions),obj_mask).float().to(self.device)
-        obj_loss = torch.sum(obj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32)
+        if(self.reduction == 'sum'):
+            obj_loss = torch.sum(obj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32)
+        elif(self.reduction == 'mean'):
+            obj_loss = torch.sum(obj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32)/torch.sum(obj_mask)
         #####################################################
         #             No Object Loss                        #
         #####################################################
         noobj_mask = torch.zeros_like(conf_predictions).to(self.device)
         # contains 1 for any box that didnt have an obj
         noobj_mask = torch.where(gt_conf == 0.0,torch.ones_like(conf_predictions),noobj_mask).float().to(self.device)
-        noobj_loss = l_noobj * (torch.sum(noobj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32))
+        if(self.reduction == 'sum'):
+            noobj_loss = l_noobj * (torch.sum(noobj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32))
+        elif(self.reduction == 'mean'):
+            noobj_loss = l_noobj * (torch.sum(noobj_mask * (gt_conf - conf_predictions)**2,dtype=torch.float32))
+            noobj_loss /= torch.sum(obj_mask)
         
+        # Total confidence loss
         conf_loss = obj_loss + noobj_loss
         return conf_loss
 
@@ -181,7 +199,9 @@ class YOLO_SSE(nn.Module):
             cls_predictions.shape[1] * cls_predictions.shape[2],
             cls_predictions.shape[3]).contiguous().to(self.device)
         
+        # Apply softmax function to get probability distribution between classes
         cls_predictions = F.softmax(cls_predictions,dim=-1)
+        
         # _, [B,S*S*N]
         max_prediction,max_pred_idx = torch.max(cls_predictions,dim=-1)
         cls_predictions_1 = torch.zeros((
@@ -201,9 +221,15 @@ class YOLO_SSE(nn.Module):
             cls_predictions.shape[1],
             1).contiguous()
         if(use_personal_calc):
-            cls_loss = torch.sum(gt_conf * (gt_cls - cls_predictions_1)**2) #torch.sum(gt_conf * torch.sum((gt_cls - cls_predictions_1)**2,1))
+            if(self.reduction == 'sum'):
+                cls_loss = torch.sum(gt_conf * (gt_cls - cls_predictions_1)**2) #torch.sum(gt_conf * torch.sum((gt_cls - cls_predictions_1)**2,1))
+            elif(self.reduction == 'mean'):
+                cls_loss = torch.sum(gt_conf * (gt_cls - cls_predictions_1)**2)/torch.sum(gt_conf) #torch.sum(gt_conf * torch.sum((gt_cls - cls_predictions_1)**2,1))
         else:
-            cls_loss_function = nn.MSELoss(reduction='sum')
+            if(self.reduction == 'sum'):
+                cls_loss_function = nn.MSELoss(reduction='sum')
+            elif(self.reduction == 'mean'):
+                cls_loss_function = nn.MSELoss(reduction='mean')
             cls_predictions_1 = cls_predictions_1.view(cls_predictions_1.shape[0]*cls_predictions_1.shape[1],-1).contiguous()
             gt_cls = gt_cls.view(gt_cls.shape[0]*gt_cls.shape[1],-1).contiguous()#torch.flatten(gt_cls.view(gt_cls.shape[0]*gt_cls.shape[1],-1).contiguous())
             gt_conf = gt_conf.view(gt_conf.shape[0]*gt_conf.shape[1],-1).contiguous()
@@ -218,7 +244,6 @@ class YOLO_SSE(nn.Module):
             ground_truth.shape[1]*ground_truth.shape[2],
             ground_truth.shape[3],
             ground_truth.shape[4]).contiguous().to(self.device)
-        
         # Get Object and No Object Masks
         obj_mask,noobj_mask = self.generate_masks(ground_truth)
         pred_obj_mask = torch.where(conf_predictions >= 0.5,torch.ones_like(conf_predictions),torch.zeros_like(conf_predictions))

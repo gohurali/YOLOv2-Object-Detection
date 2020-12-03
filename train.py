@@ -25,24 +25,52 @@ config = yaml.safe_load(open("config.yaml"))
 class Trainer:
 
     def __init__(self):
+
+        # Detection or Classification
+        self.training_type = config['training_mode']
         self.ds = Dataset(config)
         self.ds.anchors,self.ds.anchors_coords = self.ds.get_anchors()
+
+        if(self.training_type == 'detection'):
+            self.data_loader = self.load_dataloader(mode=self.training_type)
+        elif(self.training_type == 'classification'):
+            self.data_loader = self.load_dataloader(mode=self.training_type)
         pass
 
-    
-    def load_dataloader(self):
-        root_loc = config['home_dirs'][1] if config['use_colab'] else config['home_dirs'][0]
-        num_workers = 1 if config['use_gpu'] else config['num_workers']
-        dataset = VOCDetection(root=root_loc + config['train_data_loc'])
-        data_loader = torch.utils.data.DataLoader(
-            dataset, 
-            config['batch_size'],
-            shuffle=config['shuffle_data'],
-            num_workers=num_workers, 
-            collate_fn=detection_collate,
-            drop_last=True
-        )
-        return data_loader
+    def load_dataloader(self,mode):
+        if(mode == 'detection'):
+            root_loc = config['home_dirs'][1] if config['use_colab'] else config['home_dirs'][0]
+            num_workers = 1 if config['use_gpu'] else config['num_workers']
+            dataset = VOCDetection(root=root_loc + config['train_data_loc'])
+            data_loader = torch.utils.data.DataLoader(
+                dataset, 
+                config['batch_size'],
+                shuffle=config['shuffle_data'],
+                num_workers=num_workers, 
+                collate_fn=detection_collate,
+                drop_last=True
+            )
+            return data_loader
+        elif(mode == 'classification'):
+            root_loc = config['home_dirs'][1] if config['use_colab'] else config['home_dirs'][0]
+            num_workers = 1 if config['use_gpu'] else config['num_workers']
+            dataset = ClassificationDataset(root=root_loc + config['train_data_loc'])
+            data_loader = torch.utils.data.DataLoader(
+                dataset, 
+                config['batch_size'],
+                shuffle=config['shuffle_data'],
+                num_workers=num_workers, 
+                collate_fn=classification_collate,
+                drop_last=True
+            )
+
+            for idx,(img,target) in enumerate(data_loader):
+                print("IN LOOP")
+                print(idx)
+                print("TARGET",target)
+                break
+            print("DONE")
+
 
     def classification_train(self,train_set):
 
@@ -64,21 +92,8 @@ class Trainer:
                     optimizer.step()
                     pass
         
-        train_loop(config['c_num_epochs'],train_set)
+        #train_loop(config['c_num_epochs'],train_set)
         pass
-
-    def testing_method(self,train_set):
-        
-        print(len(train_set))
-
-        def train_loop(num_epochs,train_set):
-            total_loss, conf_loss, localization_loss, cls_loss = 0,0,0,0
-            print('=============== TRAINING STARTED =====================')
-            for epoch in range(config['d_num_epochs']):
-                for i,(images, targets) in enumerate(train_set):
-                    pass
-        
-        #train_loop(config['d_num_epochs'],train_set)
 
     def show_information(self,device):
         input_size = [config['img_size'],config['img_size']]
@@ -331,41 +346,29 @@ def detection_collate(batch):
 def classification_collate(batch):
     targets = []
     imgs = []
+    print("--> ", type(batch))
     for sample in batch:
         imgs.append(sample[0])
-        print("-->",sample[1][:,-1])
-        targets.append(torch.FloatTensor(sample[1]))
+        targets.append(torch.IntTensor(sample[1]))
     imgs = torch.stack(imgs, 0)
+    
     return imgs,targets
 
 def main():
-    if(config['training_model'] == 'detector'):
-        print("Detection")
+    if(config['training_mode'] == 'detection'):
+        print("[INFO]: Training for Detection")
         trainer = Trainer()
-        data_loader = trainer.load_dataloader()
-        trainer.detection_train(data_loader)
-    elif(config['training_model'] == 'classifier'):
+        trainer.detection_train(trainer.data_loader)
+    elif(config['training_mode'] == 'classification'):
         """
         Use this when you're training DarkNet19 from scratch, otherwise you can load
         the pre-trained weights. Classification will only need to train solely on 
         the DarkNet19 network and will not alter any weights in YOLO. The paper
         suggests to train on 224 x 224 images
         """
-        print("Classification")
+        print("[INFO]: Training for Classification")
         trainer = Trainer()
-        data_loader = trainer.load_dataloader()
-        trainer.classification_train(data_loader)
-    elif(config['training_model'] == 'testing'):
-        print("!! TESTING !!")
-        dataset = VOCDetection(root="datasets/archive/")
-        data_loader = torch.utils.data.DataLoader(
-            dataset, 
-            config['batch_size'],
-            shuffle=config['shuffle_data'],
-            collate_fn=classification_collate
-        )
-        trainer = Trainer()
-        trainer.testing_method(data_loader)
+        trainer.classification_train(trainer.data_loader)
 
     pass
 
